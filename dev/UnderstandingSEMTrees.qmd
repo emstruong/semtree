@@ -1,6 +1,68 @@
 ---
-title: "Untitled"
+title: "Understanding the main parts of the semtree() function"
 format: html
 ---
 
-Paused at `semtree.control()`.
+# Main Function
+
+Sequence diagram of major parts of `semtree::semtree()` function.
+
+```{mermaid}
+sequenceDiagram
+autonumber
+Title: [semtree() main function using lavaan]
+    actor semtree()
+    participant semtree.constraints()
+    participant semtree.control()
+    participant getPredictorsLavaan()
+    participant setGlobal()
+
+    semtree.constraints()->> semtree(): GET multigroup parameter constraints. 
+    semtree.control()->> semtree(): GET model fitting settings.
+    getPredictorsLavaan() ->> semtree(): GET column numbers of indicators and splitting covariates
+    setGlobal() ->> semtree(): GET environment.id of the root node
+    growTree() ->> semtree(): START recursive partitioning
+```
+
+# Recursive partitioning component
+
+
+
+`semtree::growTree()` function is found in `growTree.R`
+
+Notes:
+
+-   `meta` is the column number of indicators and of splitting covariates
+
+-   `mydata` is the data
+
+```{mermaid}
+flowchart TD
+    A[Start] --> B[Create 'node' class]
+    B --> C["Sample columns (RF)"]
+    C --> D["Check forced splits"]
+    D --> E[Is depth == 0?]
+    E -- TRUE --> E1[Inherit model from argument]
+    E -- FALSE --> E2[Estimated model using lavaan]
+    E1 --> F["Assign model to node$model"]
+    E2 --> F
+```
+
+## `node` class
+
+Notes:
+
+-   `model` can either be a fitted model or an empty template model from lavaan, specifically `lavaan::growth(model = model, data = growth.data, do.fit = FALSE)`.
+
+```{mermaid}
+classDiagram
+class node{
+    +list left_child
+    +list right_child
+    +string caption
+    +int N
+    +bool p.values.valid
+    +bool lr
+    +string edge_label
+}
+```

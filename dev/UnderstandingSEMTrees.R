@@ -1,6 +1,6 @@
 devtools::load_all()
 library(lavaan)
-
+library(lobstr) # recall; lobstr::tree()
 
 # Setup ------------------------------------------------------------------
 set.seed(23)
@@ -22,12 +22,14 @@ intercept =~ 1*T1 + 1*T2 + 1*T3 + 1*T4 + 1*T5
 slope  =~ 0*T1 + 1*T2 + 2*T3 + 3*T4 + 4*T5
 "
 lav <- lavaan::growth(model = model, data = growth.data, do.fit = FALSE)
-semtree(lav, data = growth.data, predictors = "P1")
+(mod <- semtree(lav, data = growth.data, predictors = "P1"))
+plot(mod)
 
+
+# Debug ------------------------------------------------------------------
+# debugonce(semtree)
+# semtree(lav, data = growth.data, predictors = "P1")
 
 stop()
-# Debug ------------------------------------------------------------------
-
-library(lobstr)
-debugonce(semtree)
+debugonce(growTree)
 semtree(lav, data = growth.data, predictors = "P1")
