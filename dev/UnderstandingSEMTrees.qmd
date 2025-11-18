@@ -1,0 +1,6 @@
+---
+title: "Untitled"
+format: html
+---
+
+Paused at `semtree.control()`.
