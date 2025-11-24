@@ -1,6 +1,12 @@
 ---
 title: "Understanding the main parts of the semtree() function"
-format: html
+format: 
+    html:
+        theme: flatly
+        toc: true
+        toc-location: left
+        mermaid: 
+          theme: default
 ---
 
 # Main Function
@@ -26,9 +32,84 @@ Title: [semtree() main function using lavaan]
 
 # Recursive partitioning component
 
-
-
 `semtree::growTree()` function is found in `growTree.R`
+
+```{mermaid}
+%%| htmlLabels: false
+flowchart TB
+    %% A[Start] 
+    %% A --> B
+    subgraph routine[Entire Routine]
+    direction TB
+    subgraph pre
+    direction LR
+    B[Create 'node' class] --> C["Sample columns (RF)"]
+    C --> D["Check forced splits"]
+    end
+    subgraph father [Father Node]
+    direction LR
+    %% D --> 
+    E[Is depth == 0?]
+    E -- TRUE --> E1[Inherit model <br> from argument]
+    E -- FALSE --> E2[Estimate model <br> using lavaan]
+    E1 --> F["Assign model <br> to node$model"]
+    E2 --> F
+    F --> G["Model convergence OK?"]
+    G -- TRUE --> G1[Do nothing]
+    G -- FALSE --> G2["Assign NULL to node$model w/ error msg"]
+    G1 --> H["Store parameter <br> estimates in <br> node$params"]
+    G2 --> H
+    end
+    pre --> father
+    subgraph df [Degree of Freedom]
+    direction LR
+    %% H --> 
+    I["Are there <br> focus parameters?"]
+    I -- TRUE --> I1["df = number of <br> focus parameters"]
+    I -- FALSE --> I2["df = number of <br> parameters"]
+    end
+    father --> df
+    df --> splitting
+    subgraph splitting[Splitting procedure]
+    direction TB
+    J["Use getGlobal() set node_id based on environment name"]
+    J --> K["Split using one of <br> naiveSplit(), ScoreSplit(), <br> fairSplit(control$fair3Step = <br> TRUE/FALSE)"]
+    K --> K1["naiveSplit()"]
+    K --> K2["ScoreSplit()"] 
+    K --> K3["fairSplit()"]
+    K3 --> K3A["fairSplit(control$fair3Step <br> == TRUE)"]
+    K3 --> K3B["fairSplit(control$fair3Step <br> == FALSE)"]
+    K1 --> L["Assign output <br> of split <br> in result"]
+    K2 --> L
+    K3A --> L
+    K3B --> L
+    L --> M["Assign or <br> Compute p-value <br> of split <br> to node$p"]
+    M --> N[Is stopping rule <br> TRUE or FALSE?]
+    N --> O["Using result$type.max: <br> prepare data based <br> on data type of <br> splitting covariate"]
+    O -- .SCALE_CATEGORICAL --> O1["Nominal Covariate"]
+    O -- .SCALE.METRIC --> O2["Numerical Covariate"]
+    O -- .SCALE_ORDINAL --> O3["Ordinal Covariate"]
+    O1 --> P[Create sub1 <br> and sub2  <br>datasets]
+    O2 --> P
+    O3 --> P
+    end
+    end
+    subgraph recursion
+    direction LR
+    subgraph left
+    Q1["Assign growTree(sub2) <br> to node$left_child"]
+    end
+    subgraph right
+    Q2["Assign growTree(sub1) <br> to node$right_child"]
+    end
+    end
+    routine --> recursion
+    recursion --> routine
+    %% recursion --> R
+    Q1 --> R["Return to semtree()"]
+    Q2 --> R
+%% TODO: fix text and subgraph formatting, make it easy to explore
+```
 
 Notes:
 
@@ -36,23 +117,9 @@ Notes:
 
 -   `mydata` is the data
 
-```{mermaid}
-flowchart TD
-    A[Start] --> B[Create 'node' class]
-    B --> C["Sample columns (RF)"]
-    C --> D["Check forced splits"]
-    D --> E[Is depth == 0?]
-    E -- TRUE --> E1[Inherit model from argument]
-    E -- FALSE --> E2[Estimated model using lavaan]
-    E1 --> F["Assign model to node$model"]
-    E2 --> F
-```
+-   When `control$method` is `fair`, `semtree` takes the user-provided data and creates an internal hold-out set. This is different from the way most ML libraries work because they usually require you to create the hold-out set yourself. 
 
 ## `node` class
-
-Notes:
-
--   `model` can either be a fitted model or an empty template model from lavaan, specifically `lavaan::growth(model = model, data = growth.data, do.fit = FALSE)`.
 
 ```{mermaid}
 classDiagram
@@ -60,9 +127,47 @@ class node{
     +list left_child
     +list right_child
     +string caption
-    +int N
+    +int N}
+
+class node{
     +bool p.values.valid
-    +bool lr
     +string edge_label
+    +string term.reason
+    +list model
+    +list params 
+    +list params_sd 
+    +list param_names 
+    +int df
+    +string node_id
+    +numeric lr
+    +list result
+    +list rule
+    +string caption
+    +list left_child
+    +list right_child
 }
 ```
+
+Notes:
+
+-   `model` can either be a fitted model or an empty template model from lavaan, specifically `lavaan::growth(model = model, data = growth.data, do.fit = FALSE)`.
+
+# naiveSplit()
+
+
+```{mermaid}
+flowchart TB
+    A["Create lavaan command for node$model"] 
+    B["Fit model of 
+    node$model using 
+    safeRunAndEvaluate()"]
+    A --> B
+    C[Assign meta$covariate.ids
+     to comparedData]
+    B --> C
+```
+
+Notes:
+
+-    Investigate what `safeRunAndEvaluate()` is up to?
+-    Is `node$model` always the same root model or does it change recursively?

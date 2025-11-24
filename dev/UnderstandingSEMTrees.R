@@ -31,5 +31,5 @@ plot(mod)
 # semtree(lav, data = growth.data, predictors = "P1")
 
 stop()
-debugonce(growTree)
-semtree(lav, data = growth.data, predictors = "P1")
+debugonce(naiveSplit)
+semtree(lav, data = growth.data, predictors = "P1",control = semtree.control(method = "naive"))

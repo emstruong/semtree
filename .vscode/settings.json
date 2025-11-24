@@ -1,4 +1,5 @@
 {
     "quarto.render.previewType": "external",
-    "quarto.render.previewReveal": false
+    "quarto.render.previewReveal": false,
+    "vscode-flowr.style.sliceDisplay": "tokens"
 }
