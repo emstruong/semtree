@@ -56,7 +56,9 @@ flowchart TB
     E2 --> F
     F --> G["Model convergence OK?"]
     G -- TRUE --> G1[Do nothing]
-    G -- FALSE --> G2["Assign NULL to node$model w/ error msg"]
+    G -- FALSE --> G2["Assign NULL to
+    node$model
+    w/ error msg"]
     G1 --> H["Store parameter <br> estimates in <br> node$params"]
     G2 --> H
     end
@@ -72,8 +74,14 @@ flowchart TB
     df --> splitting
     subgraph splitting[Splitting procedure]
     direction TB
-    J["Use getGlobal() set node_id based on environment name"]
-    J --> K["Split using one of <br> naiveSplit(), ScoreSplit(), <br> fairSplit(control$fair3Step = <br> TRUE/FALSE)"]
+    J["Use getGlobal() to set
+    node_id based on
+    environment name"]
+    J --> K["Split using one of 
+    naiveSplit(), ScoreSplit(),
+    fairSplit(
+    control$fair3Step =
+    TRUE/FALSE)"]
     K --> K1["naiveSplit()"]
     K --> K2["ScoreSplit()"] 
     K --> K3["fairSplit()"]
@@ -156,18 +164,53 @@ Notes:
 
 
 ```{mermaid}
+%% TODO: This problem here
 flowchart TB
-    A["Create lavaan command for node$model"] 
+    A["Create lavaan
+    command for
+    node$model"] 
     B["Fit model of 
     node$model using 
-    safeRunAndEvaluate()"]
-    A --> B
-    C[Assign meta$covariate.ids
+    safeRunAndEvaluate()
+    ??? UNCLEAR IF 
+    ROOT OR PARENT ???"]
+    C["Assign model's
+    LL to LL.overall"]
+    D[Assign meta$covariate.ids
      to comparedData]
-    B --> C
+    A --> B --> C --> D
+    D --iteratively--> iter
+    
+    subgraph iter[For each covariate]
+        E[Assign fitted model's
+        LL to LL.baseline]
+        subgraph submodels[For each splitpoint]
+            F[Create data subset 
+            as subset1 and 
+            subset2]
+            subgraph fitSubmodels["fitSubmodels()"]
+            G["Fit separate models
+            for subset1
+            and subset2"]
+            H["Sum each LL
+            to get MGA-LL"]
+            I["cbind() LL into 
+        LL.within"]
+        G --> H --> I
+        end
+        F --> fitSubmodels
+        end
+        E -- nominal --> submodels
+        E -- ordinal --> submodels
+        E -- numeric --> submodels
+    end
+    iter --> J[Create btn.matrix
+    from LL.within 
+    and friends]
+    
 ```
 
 Notes:
 
--    Investigate what `safeRunAndEvaluate()` is up to?
--    Is `node$model` always the same root model or does it change recursively?
+-    <mark> Is `node$model` always the same root model or does it change recursively? </mark>
+-    Within this function, `LL.within` always starts from nothing and all the possible split points from here are considered.

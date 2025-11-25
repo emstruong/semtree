@@ -22,14 +22,14 @@ intercept =~ 1*T1 + 1*T2 + 1*T3 + 1*T4 + 1*T5
 slope  =~ 0*T1 + 1*T2 + 2*T3 + 3*T4 + 4*T5
 "
 lav <- lavaan::growth(model = model, data = growth.data, do.fit = FALSE)
-(mod <- semtree(lav, data = growth.data, predictors = "P1"))
-plot(mod)
+# (mod <- semtree(lav, data = growth.data, predictors = "P1"))
+# plot(mod)
 
 
 # Debug ------------------------------------------------------------------
 # debugonce(semtree)
 # semtree(lav, data = growth.data, predictors = "P1")
 
-stop()
+# stop()
 debugonce(naiveSplit)
 semtree(lav, data = growth.data, predictors = "P1",control = semtree.control(method = "naive"))
