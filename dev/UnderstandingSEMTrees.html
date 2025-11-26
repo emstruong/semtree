@@ -291,7 +291,9 @@ flowchart TB
             and subset2"]
             H["Sum each LL
             to get MGA-LL"]
-            I["cbind() LL into 
+            I["cbind() difference 
+            between LL.baseline
+            and MGA-LL into 
         LL.within"]
         G --&gt; H --&gt; I
         end
@@ -302,8 +304,11 @@ flowchart TB
         E -- numeric --&gt; submodels
     end
     iter --&gt; J[Create btn.matrix
-    from LL.within 
+    from every
+    LL.within 
     and friends]
+    J --&gt; K[Assign largest
+    LL.within to LL.max] --&gt; L[EXIT]
     
 </pre>
 </div>
