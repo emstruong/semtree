@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -55,6 +89,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#node-class" id="toc-node-class" class="nav-link" data-scroll-target="#node-class"><code>node</code> class</a></li>
   </ul></li>
   <li><a href="#naivesplit" id="toc-naivesplit" class="nav-link" data-scroll-target="#naivesplit">naiveSplit()</a></li>
+  <li><a href="#easier-way" id="toc-easier-way" class="nav-link" data-scroll-target="#easier-way">Easier Way</a></li>
   </ul>
 </nav>
 </div>
@@ -321,6 +356,31 @@ flowchart TB
 <li><mark> Is <code>node$model</code> always the same root model or does it change recursively? </mark></li>
 <li>Within this function, <code>LL.within</code> always starts from nothing and all the possible split points from here are considered.</li>
 </ul>
+</section>
+<section id="easier-way" class="level1">
+<h1>Easier Way</h1>
+<p>The easiest way to understand this is probably to use the new Vignette on SPI. This is mentioned in <code>UnderstandingSEMTrees.R</code>.</p>
+<p>The conclusion is that at every split, we only test against the immediate parent node and not the most ancestral root node. We also do not compare against the entire preceding multigroup model before we attempt to find a split.</p>
+<p>There are a few heuristics:</p>
+<ul>
+<li><p>The number of rows of <code>mydata</code> decreases with every iteration of <code>growTree()</code></p></li>
+<li><p>At the end of <code>growTree()</code>, <code>sub2</code> is passed on recursively to another <code>growTree</code> and its number of rows is less than <code>mydata.</code></p></li>
+<li><p>In <code>naiveSplit()</code>, the <code>LL.overall</code> should correspond to the immediate parent node.</p></li>
+<li><p>You can also see the likelihood ratio differences in these two code snippets. Without thinking too deeply, I’m pretty sure that the differences shouldn’t match up between the two unless the comparisons are being done on only the immediate parent</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>(spi_tree_naive <span class="ot">&lt;-</span> <span class="fu">semtree</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">model =</span> two_dim_fit,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> spi_analysis,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">semtree_control</span>(<span class="at">method=</span><span class="st">"naive"</span>, <span class="at">max.depth =</span> <span class="dv">3</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>(sem_tree_subset <span class="ot">&lt;-</span> <span class="fu">semtree</span>(</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">model =</span> two_dim_fit,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> spi_analysis[spi_analysis<span class="sc">$</span>age<span class="sc">&lt;=</span><span class="fl">39.5</span> <span class="sc">&amp;</span> spi_analysis<span class="sc">$</span>age <span class="sc">&gt;=</span><span class="fl">20.5</span>,],</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">semtree_control</span>(<span class="at">method=</span><span class="st">"naive"</span>, <span class="at">max.depth =</span> <span class="dv">3</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 
 </main>

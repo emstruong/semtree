@@ -125,7 +125,7 @@ Notes:
 
 -   `mydata` is the data
 
--   When `control$method` is `fair`, `semtree` takes the user-provided data and creates an internal hold-out set. This is different from the way most ML libraries work because they usually require you to create the hold-out set yourself. 
+-   When `control$method` is `fair`, `semtree` takes the user-provided data and creates an internal hold-out set. This is different from the way most ML libraries work because they usually require you to create the hold-out set yourself.
 
 ## `node` class
 
@@ -161,7 +161,6 @@ Notes:
 -   `model` can either be a fitted model or an empty template model from lavaan, specifically `lavaan::growth(model = model, data = growth.data, do.fit = FALSE)`.
 
 # naiveSplit()
-
 
 ```{mermaid}
 %% TODO: This problem here
@@ -217,5 +216,35 @@ flowchart TB
 
 Notes:
 
--    <mark> Is `node$model` always the same root model or does it change recursively? </mark>
--    Within this function, `LL.within` always starts from nothing and all the possible split points from here are considered.
+-   <mark> Is `node$model` always the same root model or does it change recursively? </mark>
+-   Within this function, `LL.within` always starts from nothing and all the possible split points from here are considered.
+
+# Easier Way
+
+The easiest way to understand this is probably to use the new Vignette on SPI. This is mentioned in `UnderstandingSEMTrees.R`.
+
+The conclusion is that at every split, we only test against the immediate parent node and not the most ancestral root node. We also do not compare against the entire preceding multigroup model before we attempt to find a split.
+
+There are a few heuristics:
+
+-   The number of rows of `mydata` decreases with every iteration of `growTree()`
+
+-   At the end of `growTree()`, `sub2` is passed on recursively to another `growTree` and its number of rows is less than `mydata.`
+
+-   In `naiveSplit()`, the `LL.overall` should correspond to the immediate parent node.
+
+-   You can also see the likelihood ratio differences in these two code snippets. Without thinking too deeply, I'm pretty sure that the differences shouldn't match up between the two unless the comparisons are being done on only the immediate parent
+
+```{r,eval=FALSE}
+(spi_tree_naive <- semtree(
+  model = two_dim_fit,
+  data = spi_analysis,
+  control = semtree_control(method="naive", max.depth = 3)
+))
+
+(sem_tree_subset <- semtree(
+  model = two_dim_fit,
+  data = spi_analysis[spi_analysis$age<=39.5 & spi_analysis$age >=20.5,],
+  control = semtree_control(method="naive", max.depth = 3)
+))
+```

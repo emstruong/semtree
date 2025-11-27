@@ -104,19 +104,43 @@ two_dim_fit <- mxRun(two_dim_model)
 
 
 ## Debugging ---------------------------------------------------------------
-debug(semtree)
-debug(growTree)
+# debug(semtree)
+debugonce(growTree)
 debug(naiveSplit)
 debug(ScoreSplit)
 
-(spi_tree_score <- semtree(
+(spi_tree_naive <- semtree(
   model = two_dim_fit,
   data = spi_analysis,
-  control = semtree_control(method="naive")
+  control = semtree_control(method="naive", max.depth = 3)
 ))
 
-(spi_tree_score <- semtree(
+(sem_tree_subset <- semtree(
   model = two_dim_fit,
-  data = spi_analysis,
-  control = semtree_control(method="score")
+  data = spi_analysis[spi_analysis$age<=39.5,],
+  control = semtree_control(method="naive", max.depth = 3)
 ))
+
+plot(spi_tree_naive)
+plot(sem_tree_subset)
+
+# (spi_tree_score <- semtree(
+#   model = two_dim_fit,
+#   data = spi_analysis,
+#   control = semtree_control(method="score", max_depth = 3)
+# ))
+
+undebug(semtree)
+undebug(growTree)
+undebug(naiveSplit)
+undebug(ScoreSplit)
+
+
+
+# How to get a model ------------------------------------------------------
+
+test<-OpenMx::mxTryHard(
+  model = modelnew, paste = FALSE,
+  silent = TRUE, bestInitsOutput = FALSE
+)
+
